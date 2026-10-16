@@ -101,8 +101,9 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ question: text })
         });
-        const data = await res.json();
-        appendMessage(data.answer, 'ai');
+　　　const data = await res.json();
+　　　appendMessage(data.response, 'ai'); // 💡「data.response」に書き換える！
+
       } catch (err) {
         appendMessage('ファッ！？通信エラーだルルォ！？', 'ai');
       }
