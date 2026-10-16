@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>王道を往くチャット</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    /* 🟤 野獣リスペクトの男らしい泥臭いカラー（茶色・ベージュ） */
+    body {
+      background-color: #3e2723;
+      color: #d7ccc8;
+      font-family: 'Impact', sans-serif;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      background-color: #1b0000;
+      color: #ffcc00;
+      padding: 15px;
+      text-align: center;
+      font-size: 1.5em;
+      font-weight: bold;
+      border-bottom: 3px solid #ffcc00;
+    }
+    #chat-box {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .message {
+      padding: 12px 16px;
+      border-radius: 5px;
+      max-width: 75%;
+      font-weight: bold;
+    }
+    .user {
+      background-color: #ffcc00;
+      color: #1b0000;
+      align-self: flex-end;
+    }
+    .ai {
+      background-color: #5d4037;
+      color: #ffffff;
+      align-self: flex-start;
+      border: 2px dashed #ffcc00;
+    }
+    #input-area {
+      display: flex;
+      padding: 15px;
+      background-color: #1b0000;
+      gap: 10px;
+    }
+    input {
+      flex: 1;
+      background: #4e342e;
+      border: 2px solid #ffcc00;
+      color: #fff;
+      padding: 12px;
+      outline: none;
+    }
+    button {
+      background: #ffcc00;
+      color: #1b0000;
+      border: none;
+      padding: 12px 24px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <header>🎤 空手部・部室（114514） 🎤</header>
+  <div id="chat-box"></div>
+  <div id="input-area">
+    <input type="text" id="user-input" placeholder="先輩に話しかける（いいよ！こいよ！）">
+    <button onclick="sendMessage()">送信</button>
+  </div>
+
+  <script>
+    // 🔗 あなたのCloudflare WorkersのURLをセット済みの状態です！
+    const CLOUDFLARE_URL = "https://workers.dev";
+
+    async function sendMessage() {
+      const input = document.getElementById('user-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendMessage(text, 'user');
+      input.value = '';
+
+      try {
+        const res = await fetch(CLOUDFLARE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: text })
+        });
+        const data = await res.json();
+        appendMessage(data.answer, 'ai');
+      } catch (err) {
+        appendMessage('ファッ！？通信エラーだルルォ！？', 'ai');
+      }
+    }
+
+    function appendMessage(text, sender) {
+      const box = document.getElementById('chat-box');
+      const msg = document.createElement('div');
+      msg.classList.add('message', sender);
+      msg.innerText = text;
+      box.appendChild(msg);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>
