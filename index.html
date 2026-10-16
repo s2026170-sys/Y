@@ -10,7 +10,7 @@
     body {
       background-color: #3e2723;
       color: #d7ccc8;
-      font-family: 'Impact', sans-serif;
+      font-family: 'Impact', sans-serif, system-ui;
       margin: 0;
       display: flex;
       flex-direction: column;
@@ -24,6 +24,7 @@
       font-size: 1.5em;
       font-weight: bold;
       border-bottom: 3px solid #ffcc00;
+      text-shadow: 0 0 10px #ffcc00;
     }
     #chat-box {
       flex: 1;
@@ -38,6 +39,8 @@
       border-radius: 5px;
       max-width: 75%;
       font-weight: bold;
+      line-height: 1.4;
+      word-break: break-word;
     }
     .user {
       background-color: #ffcc00;
@@ -63,6 +66,7 @@
       color: #fff;
       padding: 12px;
       outline: none;
+      font-size: 16px;
     }
     button {
       background: #ffcc00;
@@ -71,6 +75,11 @@
       padding: 12px 24px;
       cursor: pointer;
       font-weight: bold;
+      font-size: 16px;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
   </style>
 </head>
@@ -79,21 +88,30 @@
   <header>🎤 空手部・部室（114514） 🎤</header>
   <div id="chat-box"></div>
   <div id="input-area">
-    <input type="text" id="user-input" placeholder="先輩に話しかける（いいよ！こいよ！）">
-    <button onclick="sendMessage()">送信</button>
+    <input type="text" id="user-input" placeholder="先輩に話しかける（いいよ！こいよ！）" onkeydown="handleKeyDown(event)">
+    <button id="send-btn" onclick="sendMessage()">送信</button>
   </div>
 
   <script>
-    // 🔗 あなたのCloudflare WorkersのURLをセット済みの状態です！
+    // 🔗 あなたのCloudflare WorkersのURL
     const CLOUDFLARE_URL = "https://dry-cherry-75df.s2026170.workers.dev/";
+
+    function handleKeyDown(event) {
+      if (event.key === 'Enter' && !event.isComposing) {
+        sendMessage();
+      }
+    }
 
     async function sendMessage() {
       const input = document.getElementById('user-input');
+      const btn = document.getElementById('send-btn');
       const text = input.value.trim();
       if (!text) return;
 
       appendMessage(text, 'user');
       input.value = '';
+      input.disabled = true;
+      btn.disabled = true;
 
       try {
         const res = await fetch(CLOUDFLARE_URL, {
@@ -101,11 +119,21 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ question: text })
         });
-　　　const data = await res.json();
-　　　appendMessage(data.response, 'ai'); // 💡「data.response」に書き換える！
-
+        
+        const data = await res.json();
+        
+        if (res.ok && data.response) {
+          appendMessage(data.response, 'ai');
+        } else {
+          appendMessage(`ファッ！？データが空っぽだルルォ！？ (${data.error || 'エラー'})`, 'ai');
+        }
+        
       } catch (err) {
         appendMessage('ファッ！？通信エラーだルルォ！？', 'ai');
+      } finally {
+        input.disabled = false;
+        btn.disabled = false;
+        input.focus();
       }
     }
 
@@ -118,8 +146,9 @@
       box.scrollTop = box.scrollHeight;
     }
 
+    // PWA用の設定
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
+      navigator.serviceWorker.register('sw.js').catch(() => {});
     }
   </script>
 </body>
