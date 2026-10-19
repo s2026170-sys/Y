@@ -3,153 +3,199 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>王道を往くチャット</title>
-  <link rel="manifest" href="manifest.json">
+  <title>Chat</title>
   <style>
-    /* 🟤 野獣リスペクトの男らしい泥臭いカラー（茶色・ベージュ） */
-    body {
-      background-color: #3e2723;
-      color: #d7ccc8;
-      font-family: 'Impact', sans-serif, system-ui;
+    * {
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #ffffff;
+      color: #111111;
+      overflow: hidden;
+    }
+
+    /* 全画面レイアウト */
+    .app-container {
+      width: 100%;
+      height: 100%;
       display: flex;
       flex-direction: column;
-      height: 100vh;
     }
-    header {
-      background-color: #1b0000;
-      color: #ffcc00;
-      padding: 15px;
-      text-align: center;
-      font-size: 1.5em;
-      font-weight: bold;
-      border-bottom: 3px solid #ffcc00;
-      text-shadow: 0 0 10px #ffcc00;
+
+    /* ヘッダー */
+    .header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
     }
-    #chat-box {
+
+    /* メッセージ一覧 */
+    .chat-messages {
       flex: 1;
-      padding: 20px;
       overflow-y: auto;
+      padding: 24px;
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 16px;
     }
+
+    /* 吹き出し（単色デザイン） */
     .message {
+      max-width: 80%;
       padding: 12px 16px;
-      border-radius: 5px;
-      max-width: 75%;
-      font-weight: bold;
-      line-height: 1.4;
+      font-size: 14px;
+      line-height: 1.6;
       word-break: break-word;
+      white-space: pre-wrap;
+      border-radius: 6px;
     }
-    .user {
-      background-color: #ffcc00;
-      color: #1b0000;
+
+    /* ユーザー発言：黒背景・白文字 */
+    .user-message {
       align-self: flex-end;
-    }
-    .ai {
-      background-color: #5d4037;
+      background-color: #111111;
       color: #ffffff;
+    }
+
+    /* AI発言：ライトグレー背景・黒文字 */
+    .ai-message {
       align-self: flex-start;
-      border: 2px dashed #ffcc00;
+      background-color: #f2f2f2;
+      color: #111111;
     }
-    #input-area {
+
+    /* 入力エリア */
+    .input-container {
+      border-top: 1px solid #e0e0e0;
+      padding: 16px 24px;
       display: flex;
-      padding: 15px;
-      background-color: #1b0000;
-      gap: 10px;
+      gap: 12px;
+      background-color: #ffffff;
     }
-    input {
+
+    input[type="text"] {
       flex: 1;
-      background: #4e342e;
-      border: 2px solid #ffcc00;
-      color: #fff;
-      padding: 12px;
+      padding: 12px 16px;
+      border: 1px solid #cccccc;
+      border-radius: 6px;
+      font-size: 15px;
+      background-color: #ffffff;
+      color: #111111;
       outline: none;
-      font-size: 16px;
+      transition: border-color 0.2s;
     }
+
+    input[type="text"]:focus {
+      border-color: #111111;
+    }
+
+    /* 送信ボタン（単色） */
     button {
-      background: #ffcc00;
-      color: #1b0000;
-      border: none;
-      padding: 12px 24px;
+      padding: 0 24px;
+      background-color: #111111;
+      color: #ffffff;
+      border: 1px solid #111111;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
       cursor: pointer;
-      font-weight: bold;
-      font-size: 16px;
+      transition: opacity 0.2s;
     }
+
+    button:hover {
+      opacity: 0.85;
+    }
+
     button:disabled {
-      opacity: 0.6;
+      background-color: #cccccc;
+      border-color: #cccccc;
       cursor: not-allowed;
     }
   </style>
 </head>
 <body>
 
-  <header>🎤 空手部・部室（114514） 🎤</header>
-  <div id="chat-box"></div>
-  <div id="input-area">
-    <input type="text" id="user-input" placeholder="先輩に話しかける（いいよ！こいよ！）" onkeydown="handleKeyDown(event)">
-    <button id="send-btn" onclick="sendMessage()">送信</button>
+<div class="app-container">
+  <div class="header">AI Chat</div>
+  
+  <div class="chat-messages" id="chatMessages">
+    <div class="message ai-message">メッセージを入力してください。</div>
   </div>
 
-  <script>
-    // 🔗 あなたのCloudflare WorkersのURL
-    const CLOUDFLARE_URL = "https://dry-cherry-75df.s2026170.workers.dev/";
+  <div class="input-container">
+    <input type="text" id="userInput" placeholder="メッセージを入力..." autocomplete="off" />
+    <button id="sendBtn" onclick="sendMessage()">送信</button>
+  </div>
+</div>
 
-    function handleKeyDown(event) {
-      if (event.key === 'Enter' && !event.isComposing) {
-        sendMessage();
+<script>
+  const API_URL = "https://dry-cherry-75df.s2026170.workers.dev/";
+  const messagesContainer = document.getElementById("chatMessages");
+  const userInput = document.getElementById("userInput");
+  const sendBtn = document.getElementById("sendBtn");
+
+  userInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.isComposing) {
+      sendMessage();
+    }
+  });
+
+  function addMessage(text, isUser) {
+    const div = document.createElement("div");
+    div.className = `message ${isUser ? "user-message" : "ai-message"}`;
+    div.textContent = text;
+    messagesContainer.appendChild(div);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const text = userInput.value.trim();
+    if (!text) return;
+
+    addMessage(text, true);
+    userInput.value = "";
+    sendBtn.disabled = true;
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ message: text, prompt: text })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
       }
-    }
 
-    async function sendMessage() {
-      const input = document.getElementById('user-input');
-      const btn = document.getElementById('send-btn');
-      const text = input.value.trim();
-      if (!text) return;
+      const contentType = response.headers.get("content-type");
+      let replyText = "";
 
-      appendMessage(text, 'user');
-      input.value = '';
-      input.disabled = true;
-      btn.disabled = true;
-
-      try {
-        const res = await fetch(CLOUDFLARE_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: text })
-        });
-        
-        const data = await res.json();
-        
-        if (res.ok && data.response) {
-          appendMessage(data.response, 'ai');
-        } else {
-          appendMessage(`ファッ！？データが空っぽだルルォ！？ (${data.error || 'エラー'})`, 'ai');
-        }
-        
-      } catch (err) {
-        appendMessage('ファッ！？通信エラーだルルォ！？', 'ai');
-      } finally {
-        input.disabled = false;
-        btn.disabled = false;
-        input.focus();
+      if (contentType && contentType.includes("application/json")) {
+        const data = await response.json();
+        replyText = data.response || data.reply || data.message || JSON.stringify(data);
+      } else {
+        replyText = await response.text();
       }
-    }
 
-    function appendMessage(text, sender) {
-      const box = document.getElementById('chat-box');
-      const msg = document.createElement('div');
-      msg.classList.add('message', sender);
-      msg.innerText = text;
-      box.appendChild(msg);
-      box.scrollTop = box.scrollHeight;
+      addMessage(replyText, false);
+    } catch (err) {
+      addMessage("通信エラー: " + err.message, false);
+    } finally {
+      sendBtn.disabled = false;
+      userInput.focus();
     }
+  }
+</script>
 
-    // PWA用の設定
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
-    }
-  </script>
 </body>
 </html>
